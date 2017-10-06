@@ -3101,6 +3101,14 @@ static bool AcceptBlock(const std::shared_ptr<const CBlock>& pblock, CValidation
     if (fNewBlock) *fNewBlock = false;
     AssertLockHeld(cs_main);
 
+    assert(chainActive.Tip());
+
+    // Protect against DoS attacks from low-work chains.
+    // If our tip is behind, a peer could try to send us
+    // low-work blocks on a fake chain that we would never
+    // request; don't process these.
+    if (!fRequested && chainActive.Tip()->nChainWork < nMinimumChainWork) return true;
+
     CBlockIndex *pindexDummy = nullptr;
     CBlockIndex *&pindex = ppindex ? *ppindex : pindexDummy;
 
@@ -3111,7 +3119,7 @@ static bool AcceptBlock(const std::shared_ptr<const CBlock>& pblock, CValidation
     // process an unrequested block if it's new and has enough work to
     // advance our tip, and isn't too many blocks ahead.
     bool fAlreadyHave = pindex->nStatus & BLOCK_HAVE_DATA;
-    bool fHasMoreWork = (chainActive.Tip() ? pindex->nChainWork > chainActive.Tip()->nChainWork : true);
+    bool fHasMoreWork = pindex->nChainWork > chainActive.Tip()->nChainWork;
     // Blocks that are too out-of-order needlessly limit the effectiveness of
     // pruning, because pruning will not delete block files that contain any
     // blocks which are too close in height to the tip.  Apply this test
