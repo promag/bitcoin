@@ -3015,8 +3015,12 @@ UniValue fundrawtransaction(const JSONRPCRequest& request)
     CAmount nFeeOut;
     std::string strFailReason;
 
-    if (!pwallet->FundTransaction(tx, nFeeOut, changePosition, strFailReason, lockUnspents, setSubtractFeeFromOutputs, coinControl)) {
-        throw JSONRPCError(RPC_WALLET_ERROR, strFailReason);
+    {
+        LOCK2(cs_main, pwallet->cs_wallet);
+
+        if (!pwallet->FundTransaction(tx, nFeeOut, changePosition, strFailReason, lockUnspents, setSubtractFeeFromOutputs, coinControl)) {
+            throw JSONRPCError(RPC_WALLET_ERROR, strFailReason);
+        }
     }
 
     UniValue result(UniValue::VOBJ);
