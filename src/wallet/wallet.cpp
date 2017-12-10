@@ -2708,7 +2708,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
         LOCK2(cs_main, cs_wallet);
         {
             std::vector<COutput> vAvailableCoins;
-            AvailableCoins(vAvailableCoins, true, &coin_control);
+            bool available_coins_computed = false;
 
             // Create change script that will be used if we need change
             // TODO: pass in scriptChange instead of reservekey so
@@ -2794,8 +2794,13 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
                 if (pick_new_inputs) {
                     nValueIn = 0;
                     setCoins.clear();
-                    if (!SelectCoins(vAvailableCoins, nValueToSelect, setCoins, nValueIn, &coin_control))
-                    {
+
+                    if (!available_coins_computed) {
+                        AvailableCoins(vAvailableCoins, true, &coin_control);
+                        available_coins_computed = true;
+                    }
+
+                    if (!SelectCoins(vAvailableCoins, nValueToSelect, setCoins, nValueIn, &coin_control)) {
                         strFailReason = _("Insufficient funds");
                         return false;
                     }
