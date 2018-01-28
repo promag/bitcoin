@@ -3803,10 +3803,13 @@ bool LoadChainTip(const CChainParams& chainparams)
 
     g_chainstate.PruneBlockIndexCandidates();
 
-    LogPrintf("Loaded best chain: hashBestChain=%s height=%d date=%s progress=%f\n",
-        chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(),
-        DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
-        GuessVerificationProgress(chainparams.TxData(), chainActive.Tip()));
+    {
+        LOCK(cs_main);
+        LogPrintf("Loaded best chain: hashBestChain=%s height=%d date=%s progress=%f\n",
+            chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(),
+            DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
+            GuessVerificationProgress(chainparams.TxData(), chainActive.Tip()));
+    }
     return true;
 }
 
@@ -4659,7 +4662,9 @@ bool DumpMempool(void)
 }
 
 //! Guess how far we are in the verification process at the given block index
+//! needs cs_main due to access of pindex->nChainTx (mutable)
 double GuessVerificationProgress(const ChainTxData& data, const CBlockIndex *pindex) {
+    AssertLockHeld(cs_main);
     if (pindex == nullptr)
         return 0.0;
 
