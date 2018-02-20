@@ -369,6 +369,8 @@ void SendCoinsDialog::on_sendButton_clicked()
         accept();
         CoinControlDialog::coinControl()->UnSelectAll();
         coinControlUpdateLabels();
+        const uint256 txid = currentTransaction.getTransaction()->GetHash();
+        Q_EMIT coinsSent(txid);
     }
     fNewRecipientAllowed = true;
 }
