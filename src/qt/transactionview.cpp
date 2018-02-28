@@ -599,11 +599,15 @@ void TransactionView::focusTransaction(const uint256& txid)
     const QModelIndexList results = this->model->getTransactionTableModel()->match(
         this->model->getTransactionTableModel()->index(0,0),
         TransactionTableModel::TxHashRole,
-        QString::fromStdString(txid.ToString()));
+        QString::fromStdString(txid.ToString()), -1);
 
-    if (results.isEmpty()) return;
-
-    focusTransaction(results[0]);
+    transactionView->setFocus();
+    transactionView->selectionModel()->clearSelection();
+    for (const QModelIndex& index : results) {
+        transactionView->selectionModel()->select(
+            transactionProxyModel->mapFromSource(index),
+            QItemSelectionModel::Rows | QItemSelectionModel::Select);
+    }
 }
 
 // We override the virtual resizeEvent of the QWidget to adjust tables column
