@@ -4012,12 +4012,12 @@ CWallet* CWallet::CreateWalletFromFile(const std::string& name, const fs::path& 
         }
     }
 
-    if (!gArgs.GetArg("-addresstype", "").empty() && !ParseOutputType(gArgs.GetArg("-addresstype", ""), walletInstance->m_default_address_type)) {
+    if (!ParseOutputType(gArgs.GetArg("-addresstype", ""), walletInstance->m_default_address_type)) {
         InitError(strprintf("Unknown address type '%s'", gArgs.GetArg("-addresstype", "")));
         return nullptr;
     }
 
-    if (!gArgs.GetArg("-changetype", "").empty() && !ParseOutputType(gArgs.GetArg("-changetype", ""), walletInstance->m_default_change_type)) {
+    if (!ParseOutputType(gArgs.GetArg("-changetype", ""), walletInstance->m_default_change_type)) {
         InitError(strprintf("Unknown change type '%s'", gArgs.GetArg("-changetype", "")));
         return nullptr;
     }
@@ -4207,7 +4207,9 @@ static const std::string OUTPUT_TYPE_STRING_BECH32 = "bech32";
 
 bool ParseOutputType(const std::string& type, OutputType& output_type)
 {
-    if (type == OUTPUT_TYPE_STRING_LEGACY) {
+    if (type.empty()) {
+        return true;
+    } else if (type == OUTPUT_TYPE_STRING_LEGACY) {
         output_type = OutputType::LEGACY;
         return true;
     } else if (type == OUTPUT_TYPE_STRING_P2SH_SEGWIT) {
