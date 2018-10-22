@@ -54,7 +54,7 @@ std::vector<fs::path> ListWalletDir()
     const fs::path wallet_dir = GetWalletDir();
     std::vector<fs::path> paths;
 
-    for (auto it = fs::recursive_directory_iterator(wallet_dir); it != end(it); ++it) {
+    for (auto it = fs::recursive_directory_iterator(wallet_dir); it != fs::end(it); ++it) {
         if (it->status().type() == fs::directory_file && IsBerkeleyBtree(it->path() / "wallet.dat")) {
             // Found a directory which contains wallet.dat btree file, add it as a wallet.
             paths.emplace_back(fs::relative(it->path(), wallet_dir));
