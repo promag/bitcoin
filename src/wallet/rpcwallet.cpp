@@ -2386,6 +2386,8 @@ static UniValue listwallets(const JSONRPCRequest& request)
     return obj;
 }
 
+static Mutex g_load_unload_mutex;
+
 static UniValue loadwallet(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
@@ -2405,6 +2407,9 @@ static UniValue loadwallet(const JSONRPCRequest& request)
             + HelpExampleCli("loadwallet", "\"test.dat\"")
             + HelpExampleRpc("loadwallet", "\"test.dat\"")
         );
+
+    LOCK(g_load_unload_mutex);
+
     std::string wallet_file = request.params[0].get_str();
     std::string error;
 
@@ -2458,6 +2463,9 @@ static UniValue createwallet(const JSONRPCRequest& request)
             + HelpExampleRpc("createwallet", "\"testwallet\"")
         );
     }
+
+    LOCK(g_load_unload_mutex);
+
     std::string wallet_name = request.params[0].get_str();
     std::string error;
     std::string warning;
@@ -2506,6 +2514,8 @@ static UniValue unloadwallet(const JSONRPCRequest& request)
             + HelpExampleRpc("unloadwallet", "wallet_name")
         );
     }
+
+    LOCK(g_load_unload_mutex);
 
     std::string wallet_name;
     if (GetWalletNameFromJSONRPCRequest(request, wallet_name)) {
