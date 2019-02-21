@@ -6,7 +6,6 @@
 
 #include <qt/bitcoinunits.h>
 #include <qt/clientmodel.h>
-#include <qt/createwalletdialog.h>
 #include <qt/guiconstants.h>
 #include <qt/guiutil.h>
 #include <qt/modaloverlay.h>
@@ -407,9 +406,8 @@ void BitcoinGUI::createActions()
             m_wallet_controller->closeWallet(walletFrame->currentWalletModel(), this);
         });
         connect(m_create_wallet_action, &QAction::triggered, [this] {
-            CreateWalletDialog dlg(this);
-            dlg.SetWalletController(m_wallet_controller);
-            dlg.exec();
+            CreateWalletActivity* activity = m_wallet_controller->createWallet(this);
+            connect(activity, &CreateWalletActivity::created, this, &BitcoinGUI::setCurrentWallet);
         });
     }
 #endif // ENABLE_WALLET

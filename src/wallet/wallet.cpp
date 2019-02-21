@@ -155,6 +155,7 @@ std::shared_ptr<CWallet> LoadWallet(interfaces::Chain& chain, const std::string&
 
 std::shared_ptr<CWallet> CreateWallet(interfaces::Chain& chain, const WalletLocation& location, uint64_t wallet_creation_flags)
 {
+    MilliSleep(4231);
     std::shared_ptr<CWallet> wallet = CWallet::CreateWalletFromFile(chain, location, wallet_creation_flags);
     if (!wallet) {
         return nullptr;

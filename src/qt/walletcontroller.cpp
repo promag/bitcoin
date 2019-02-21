@@ -3,15 +3,19 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <qt/askpassphrasedialog.h>
+#include <qt/createwalletdialog.h>
 #include <qt/walletcontroller.h>
 
 #include <interfaces/handler.h>
 #include <interfaces/node.h>
 
+#include <wallet/wallet.h>
+
 #include <algorithm>
 
 #include <QMessageBox>
 #include <QMutexLocker>
+#include <QProgressDialog>
 #include <QThread>
 
 WalletController::WalletController(interfaces::Node& node, const PlatformStyle* platform_style, OptionsModel* options_model, QObject* parent)
@@ -79,9 +83,51 @@ OpenWalletActivity* WalletController::openWallet(const std::string& name, QWidge
     return activity;
 }
 
-std::unique_ptr<interfaces::Wallet> WalletController::createWallet(const std::string& name, uint64_t wallet_creation_flags)
+CreateWalletActivity* WalletController::createWallet(QWidget* parent)
 {
-    return m_node.createWallet(name, wallet_creation_flags);
+    CreateWalletActivity* activity = new CreateWalletActivity(this);
+    CreateWalletDialog* dialog = new CreateWalletDialog(parent);
+    QProgressDialog* progress = new QProgressDialog(parent);
+
+    connect(dialog, &QDialog::accepted, [dialog, progress] {
+        progress->setLabelText(tr("Creating Wallet <b>%1</b>...").arg(dialog->getWalletName().toHtmlEscaped()));
+        progress->setRange(0, 0);
+        progress->setCancelButton(nullptr);
+        progress->setWindowModality(Qt::ApplicationModal);
+        progress->show();
+    });
+    connect(dialog, &QDialog::accepted, activity, [activity, dialog] {
+        // TODO flags should be in node.cpp ?
+        uint64_t flags = 0;
+        if (dialog->isDisabledPrivateKeys()) {
+            flags |= WALLET_FLAG_DISABLE_PRIVATE_KEYS;
+        }
+        if (dialog->isBlank() || dialog->isEncrypt()) {
+            flags |= WALLET_FLAG_BLANK_WALLET;
+        }
+
+        activity->create(dialog->getWalletName(), flags);
+    });
+    connect(activity, &CreateWalletActivity::finished, progress, &QObject::deleteLater);
+    connect(activity, &CreateWalletActivity::created, this, [dialog, parent](WalletModel* model) {
+        if (!dialog->isEncrypt()) return;
+
+        // TODO: after sleep...
+        // AskPassphraseDialog dlg(AskPassphraseDialog::Encrypt, this);
+        // dlg.setModel(model);
+        // dlg.exec();
+        // // Set the seed after encryption
+        // if (!blank && !disable_priv_keys) {
+        //   model->wallet().setNewHDSeed();
+        //   model->wallet().topUpKeyPool();
+        // }
+    });
+
+    activity->moveToThread(&m_activity_thread);
+    dialog->show();
+    // TODO: handle cancel or creation errors
+
+    return activity;
 }
 
 void WalletController::closeWallet(WalletModel* wallet_model, QWidget* parent)
@@ -157,6 +203,18 @@ void WalletController::removeAndDeleteWallet(WalletModel* wallet_model)
     delete wallet_model;
 }
 
+CreateWalletActivity::CreateWalletActivity(WalletController* wallet_controller)
+    : m_wallet_controller(wallet_controller)
+{}
+
+void CreateWalletActivity::create(const QString& name, uint64_t creation_flags)
+{
+    std::unique_ptr<interfaces::Wallet> wallet = m_wallet_controller->m_node.createWallet(name.toStdString(), creation_flags);
+    if (wallet) {
+        Q_EMIT created(m_wallet_controller->getOrCreateWallet(std::move(wallet)));
+    }
+    Q_EMIT finished();
+}
 
 OpenWalletActivity::OpenWalletActivity(WalletController* wallet_controller, const std::string& name)
     : m_wallet_controller(wallet_controller)

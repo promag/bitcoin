@@ -5,12 +5,7 @@
 #ifndef BITCOIN_QT_CREATEWALLETDIALOGG_H
 #define BITCOIN_QT_CREATEWALLETDIALOGG_H
 
-#include <qt/walletcontroller.h>
-
 #include <QDialog>
-
-class BitcoinGUI;
-class WalletModel;
 
 namespace Ui {
     class CreateWalletDialog;
@@ -23,17 +18,16 @@ class CreateWalletDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit CreateWalletDialog(BitcoinGUI *parent);
+    explicit CreateWalletDialog(QWidget* parent);
     ~CreateWalletDialog();
 
-    void accept();
-
-    void SetWalletController(WalletController *wallet_controller);
+    QString getWalletName() const;
+    bool isBlank() const;
+    bool isDisabledPrivateKeys() const;
+    bool isEncrypt() const;
 
 private:
     Ui::CreateWalletDialog *ui;
-    WalletController *m_wallet_controller;
-    BitcoinGUI* m_parent;
 };
 
 #endif // BITCOIN_QT_CREATEWALLETDIALOGG_H

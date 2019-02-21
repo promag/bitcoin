@@ -24,6 +24,7 @@ class Handler;
 class Node;
 } // namespace interfaces
 
+class CreateWalletActivity;
 class OpenWalletActivity;
 
 /**
@@ -45,7 +46,7 @@ public:
     bool checkWalletExists(std::string name) const;
 
     OpenWalletActivity* openWallet(const std::string& name, QWidget* parent = nullptr);
-    std::unique_ptr<interfaces::Wallet> createWallet(const std::string& name, uint64_t wallet_creation_flags);
+    CreateWalletActivity* createWallet(QWidget* parent = nullptr);
     void closeWallet(WalletModel* wallet_model, QWidget* parent = nullptr);
 
 private Q_SLOTS:
@@ -66,7 +67,28 @@ private:
     std::vector<WalletModel*> m_wallets;
     std::unique_ptr<interfaces::Handler> m_handler_load_wallet;
 
+    friend class CreateWalletActivity;
     friend class OpenWalletActivity;
+};
+
+// TODO: maybe add base WalletControllerActivity : public AbstractActivity
+class CreateWalletActivity : public QObject
+{
+    Q_OBJECT
+
+public:
+    CreateWalletActivity(WalletController* wallet_controller);
+
+    // TODO: should not receive flags, instead dialog parameters..
+    void create(const QString& name, uint64_t creation_flags);
+
+Q_SIGNALS:
+    // TODO: should emit other signals: progress, message, whatever..
+    void created(WalletModel* wallet_model);
+    void finished();
+
+private:
+    WalletController* const m_wallet_controller;
 };
 
 class OpenWalletActivity : public QObject
