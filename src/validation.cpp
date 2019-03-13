@@ -1207,8 +1207,7 @@ static void AlertNotify(const std::string& strMessage)
     safeStatus = singleQuote+safeStatus+singleQuote;
     boost::replace_all(strCmd, "%s", safeStatus);
 
-    std::thread t(runCommand, strCmd);
-    t.detach(); // thread runs free
+    runCommand(strCmd);
 }
 
 static void CheckForkWarningConditions() EXCLUSIVE_LOCKS_REQUIRED(cs_main)

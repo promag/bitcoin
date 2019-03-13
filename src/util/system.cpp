@@ -34,6 +34,7 @@
 #include <sched.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
+#include <uv.h>
 
 #else
 
@@ -1128,13 +1129,26 @@ fs::path GetSpecialFolderPath(int nFolder, bool fCreate)
 void runCommand(const std::string& strCommand)
 {
     if (strCommand.empty()) return;
-#ifndef WIN32
-    int nErr = ::system(strCommand.c_str());
-#else
-    int nErr = ::_wsystem(std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t>().from_bytes(strCommand).c_str());
-#endif
-    if (nErr)
+    uv_process_t* child_req = new uv_process_t;
+    memset(child_req, 0, sizeof(uv_process_t));
+    uv_process_options_t options{};
+    uv_loop_t *loop = uv_default_loop();
+
+    char** args = new char*[4];
+    args[0] = strdup("/bin/bash");
+    args[1] = strdup("-c");
+    args[2] = strdup(strCommand.c_str());
+    args[3] = nullptr;
+    //char* env[] = { "FOO=allright!", nullptr };
+
+    options.file = args[0];
+    options.args = args;
+    options.flags = UV_PROCESS_DETACHED;
+    //options.env = env;
+
+    if (int nErr = uv_spawn(loop, child_req, &options)) {
         LogPrintf("runCommand error: system(%s) returned %d\n", strCommand, nErr);
+    }
 }
 
 void RenameThread(const char* name)

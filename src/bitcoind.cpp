@@ -23,6 +23,7 @@
 #include <walletinitinterface.h>
 
 #include <stdio.h>
+#include <uv.h>
 
 const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
 
@@ -44,14 +45,6 @@ const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
  * Use the buttons <code>Namespaces</code>, <code>Classes</code> or <code>Files</code> at the top of the page to start navigating the code.
  */
 
-static void WaitForShutdown()
-{
-    while (!ShutdownRequested())
-    {
-        MilliSleep(200);
-    }
-    Interrupt();
-}
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -180,7 +173,17 @@ static bool AppInit(int argc, char* argv[])
     {
         Interrupt();
     } else {
-        WaitForShutdown();
+        uv_idle_t idler;
+        auto loop = uv_default_loop();
+        uv_idle_init(loop, &idler);
+        uv_idle_start(&idler, [](uv_idle_t* idler) {
+            if (ShutdownRequested()) uv_idle_stop(idler);
+        });
+
+        uv_run(loop, UV_RUN_DEFAULT);
+        uv_loop_close(loop);
+
+        Interrupt();
     }
     Shutdown(interfaces);
 
