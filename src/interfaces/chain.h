@@ -260,7 +260,6 @@ public:
         virtual void BlockConnected(const CBlock& block, const std::vector<CTransactionRef>& tx_conflicted) {}
         virtual void BlockDisconnected(const CBlock& block) {}
         virtual void ChainStateFlushed(const CBlockLocator& locator) {}
-        virtual void ResendWalletTransactions(Lock& locked_chain) {}
     };
 
     //! Register handler for notifications.

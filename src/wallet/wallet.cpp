@@ -2138,8 +2138,11 @@ std::vector<uint256> CWallet::ResendWalletTransactionsBefore(interfaces::Chain::
     return result;
 }
 
+// Resend unconfirmed wallet transactions
 void CWallet::ResendWalletTransactions(interfaces::Chain::Lock& locked_chain)
 {
+    // During reindex, importing and IBD, old wallet transactions become
+    // unconfirmed. Don't resend them as that would spam other nodes.
     if (!chain().isReadyToBroadcast()) return;
 
     // Do this infrequently and randomly to avoid giving away

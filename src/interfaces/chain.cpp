@@ -203,16 +203,6 @@ public:
         m_notifications->BlockDisconnected(*block);
     }
     void ChainStateFlushed(const CBlockLocator& locator) override { m_notifications->ChainStateFlushed(locator); }
-    void ResendWalletTransactions(int64_t best_block_time, CConnman*) override
-    {
-        // `cs_main` is always held when this method is called, so it is safe to
-        // call `assumeLocked`. This is awkward, and the `assumeLocked` method
-        // should be able to be removed entirely if `ResendWalletTransactions`
-        // is replaced by a wallet timer as suggested in
-        // https://github.com/bitcoin/bitcoin/issues/15619
-        auto locked_chain = m_chain.assumeLocked();
-        m_notifications->ResendWalletTransactions(*locked_chain);
-    }
     Chain& m_chain;
     Chain::Notifications* m_notifications;
 };

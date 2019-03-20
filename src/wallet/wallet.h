@@ -946,7 +946,7 @@ public:
     ScanResult ScanForWalletTransactions(const uint256& first_block, const uint256& last_block, const WalletRescanReserver& reserver, bool fUpdate);
     void TransactionRemovedFromMempool(const CTransactionRef &ptx) override;
     void ReacceptWalletTransactions();
-    void ResendWalletTransactions(interfaces::Chain::Lock& locked_chain) override;
+    void ResendWalletTransactions(interfaces::Chain::Lock& locked_chain);
     // ResendWalletTransactionsBefore may only be called if fBroadcastTransactions!
     std::vector<uint256> ResendWalletTransactionsBefore(interfaces::Chain::Lock& locked_chain, int64_t nTime);
     CAmount GetBalance(const isminefilter& filter=ISMINE_SPENDABLE, const int min_depth=0) const;
