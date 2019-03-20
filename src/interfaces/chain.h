@@ -223,6 +223,9 @@ public:
     //! Check if p2p enabled.
     virtual bool p2pEnabled() = 0;
 
+    //! Check if the node is ready to broadcast transactions.
+    virtual bool isReadyToBroadcast() = 0;
+
     //! Check if in IBD.
     virtual bool isInitialBlockDownload() = 0;
 
@@ -257,7 +260,7 @@ public:
         virtual void BlockConnected(const CBlock& block, const std::vector<CTransactionRef>& tx_conflicted) {}
         virtual void BlockDisconnected(const CBlock& block) {}
         virtual void ChainStateFlushed(const CBlockLocator& locator) {}
-        virtual void ResendWalletTransactions(Lock& locked_chain, int64_t best_block_time) {}
+        virtual void ResendWalletTransactions(Lock& locked_chain) {}
     };
 
     //! Register handler for notifications.

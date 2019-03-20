@@ -2138,8 +2138,10 @@ std::vector<uint256> CWallet::ResendWalletTransactionsBefore(interfaces::Chain::
     return result;
 }
 
-void CWallet::ResendWalletTransactions(interfaces::Chain::Lock& locked_chain, int64_t nBestBlockTime)
+void CWallet::ResendWalletTransactions(interfaces::Chain::Lock& locked_chain)
 {
+    if (!chain().isReadyToBroadcast()) return;
+
     // Do this infrequently and randomly to avoid giving away
     // that these are our transactions.
     if (GetTime() < nNextResend || !fBroadcastTransactions)
@@ -2149,21 +2151,31 @@ void CWallet::ResendWalletTransactions(interfaces::Chain::Lock& locked_chain, in
     if (fFirst)
         return;
 
+    // Get the best block time
+    Optional<int> tip_height = locked_chain.getHeight();
+    int64_t best_block_time = tip_height ? locked_chain.getBlockTime(*tip_height) : 0;
+
     // Only do it if there's been a new block since last time
-    if (nBestBlockTime < nLastResend)
+    if (best_block_time < nLastResend)
         return;
     nLastResend = GetTime();
 
     // Rebroadcast unconfirmed txes older than 5 minutes before the last
     // block was found:
-    std::vector<uint256> relayed = ResendWalletTransactionsBefore(locked_chain, nBestBlockTime-5*60);
+    std::vector<uint256> relayed = ResendWalletTransactionsBefore(locked_chain, best_block_time-5*60);
     if (!relayed.empty())
         WalletLogPrintf("%s: rebroadcast %u unconfirmed transactions\n", __func__, relayed.size());
 }
 
 /** @} */ // end of mapWallet
 
-
+void MaybeResendWalletTxs()
+{
+    for (const std::shared_ptr<CWallet>& pwallet : GetWallets()) {
+        auto locked_chain = pwallet->chain().lock();
+        pwallet->ResendWalletTransactions(*locked_chain);
+    }
+}
 
 
 /** @defgroup Actions
