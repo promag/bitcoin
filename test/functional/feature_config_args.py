@@ -76,8 +76,16 @@ class ConfArgsTest(BitcoinTestFramework):
         # Check that using non-existent datadir in conf file fails
         conf_file = os.path.join(default_data_dir, "bitcoin.conf")
 
-        # datadir needs to be set before [regtest] section
+        # keep current config contents
         conf_file_contents = open(conf_file, encoding='utf8').read()
+
+        # test missing network config (PR #15629)
+        with open(conf_file, 'w', encoding='utf8') as f:
+            f.write("wallet=foo\n")
+            f.write(conf_file_contents)
+        self.nodes[0].assert_start_raises_init_error(['-conf=' + conf_file], 'Error: Config setting for -wallet only applied on regtest network when in [regtest] section.')
+
+        # datadir needs to be set before [regtest] section
         with open(conf_file, 'w', encoding='utf8') as f:
             f.write("datadir=" + new_data_dir + "\n")
             f.write(conf_file_contents)
