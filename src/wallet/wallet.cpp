@@ -4428,6 +4428,12 @@ void CWallet::postInitProcess()
     // Add wallet transactions that aren't already in a block to mempool
     // Do this here as mempool requires genesis block to be loaded
     ReacceptWalletTransactions();
+
+    // Update wallet transactions with current mempool transactions.
+    LOCK(::mempool.cs);
+    for (const CTxMemPoolEntry& entry : ::mempool.mapTx) {
+        TransactionAddedToMempool(entry.GetSharedTx());
+    }
 }
 
 bool CWallet::BackupWallet(const std::string& strDest)
