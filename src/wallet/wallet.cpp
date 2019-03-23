@@ -146,6 +146,15 @@ std::shared_ptr<CWallet> LoadWallet(interfaces::Chain& chain, const WalletLocati
     }
     AddWallet(wallet);
     wallet->postInitProcess();
+
+    {
+        // Update wallet transactions with current mempool transactions.
+        LOCK2(cs_main, ::mempool.cs);
+        for (const CTxMemPoolEntry& entry : ::mempool.mapTx) {
+            wallet->TransactionAddedToMempool(entry.GetSharedTx());
+        }
+    }
+
     return wallet;
 }
 
