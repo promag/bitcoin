@@ -184,6 +184,10 @@ public:
             UnregisterValidationInterface(this);
         }
     }
+    void UpdatedBlockTip(const CBlockIndex *pindexNew, const CBlockIndex *pindexFork, bool fInitialDownload) override
+    {
+        m_notifications->UpdatedBlockTip();
+    }
     void TransactionAddedToMempool(const CTransactionRef& tx) override
     {
         m_notifications->TransactionAddedToMempool(tx);

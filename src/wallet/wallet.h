@@ -923,6 +923,7 @@ public:
     void MarkDirty();
     bool AddToWallet(const CWalletTx& wtxIn, bool fFlushOnClose=true);
     void LoadToWallet(const CWalletTx& wtxIn) EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
+    void UpdatedBlockTip() override;
     void TransactionAddedToMempool(const CTransactionRef& tx) override;
     void BlockConnected(const CBlock& block, const std::vector<CTransactionRef>& vtxConflicted) override;
     void BlockDisconnected(const CBlock& block) override;
@@ -1227,8 +1228,6 @@ public:
 
     friend struct WalletTestingSetup;
 };
-
-void MaybeResendWalletTxs();
 
 /** A key allocated from the key pool. */
 class CReserveKey final : public CReserveScript

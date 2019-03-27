@@ -1224,6 +1224,11 @@ void CWallet::SyncTransaction(const CTransactionRef& ptx, const uint256& block_h
     MarkInputsDirty(ptx);
 }
 
+void CWallet::UpdatedBlockTip()
+{
+    ResendWalletTransactions();
+}
+
 void CWallet::TransactionAddedToMempool(const CTransactionRef& ptx) {
     auto locked_chain = chain().lock();
     LOCK(cs_wallet);
@@ -2172,13 +2177,6 @@ void CWallet::ResendWalletTransactions()
 }
 
 /** @} */ // end of mapWallet
-
-void MaybeResendWalletTxs()
-{
-    for (const std::shared_ptr<CWallet>& pwallet : GetWallets()) {
-        pwallet->ResendWalletTransactions();
-    }
-}
 
 
 /** @defgroup Actions

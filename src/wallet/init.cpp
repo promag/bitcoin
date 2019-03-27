@@ -213,7 +213,6 @@ void StartWallets(CScheduler& scheduler)
 
     // Schedule periodic wallet flushes and tx rebroadcasts
     scheduler.scheduleEvery(MaybeCompactWalletDB, 500);
-    scheduler.scheduleEvery(MaybeResendWalletTxs, 1000);
 }
 
 void FlushWallets()
