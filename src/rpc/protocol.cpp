@@ -145,7 +145,7 @@ std::vector<UniValue> JSONRPCProcessBatchReply(const UniValue &in, size_t num)
         if (id >= num) {
             throw std::runtime_error("Batch member id larger than size");
         }
-        batch[id] = rec;
+        batch[id] = std::move(rec);
     }
     return batch;
 }

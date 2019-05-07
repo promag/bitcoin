@@ -5,12 +5,19 @@
 #include <bench/bench.h>
 #include <policy/policy.h>
 #include <rpc/blockchain.h>
+#include <streams.h>
+#include <net.h>
 #include <txmempool.h>
 
 #include <univalue.h>
 
 #include <list>
 #include <vector>
+
+namespace block_bench {
+#include <bench/data/block413567.raw.h>
+} // namespace block_bench
+
 
 static void AddTx(const CTransactionRef& tx, const CAmount& fee, CTxMemPool& pool) EXCLUSIVE_LOCKS_REQUIRED(cs_main, pool.cs)
 {
@@ -40,4 +47,23 @@ static void RpcMempool(benchmark::State& state)
     }
 }
 
+static void Test(benchmark::State& state)
+{
+  CDataStream stream((const char*)block_bench::block413567,
+          (const char*)block_bench::block413567 + sizeof(block_bench::block413567),
+          SER_NETWORK, PROTOCOL_VERSION);
+  char a = '\0';
+  stream.write(&a, 1); // Prevent compaction
+
+  CBlock block;
+  stream >> block;
+
+  while (state.KeepRunning()) {
+      UniValue result = blockToJSON(block, nullptr, nullptr, true);
+      // result.write();
+  }
+}
+
+
 BENCHMARK(RpcMempool, 40);
+BENCHMARK(Test, 40);

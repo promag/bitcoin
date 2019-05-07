@@ -114,6 +114,15 @@ bool UniValue::push_back(const UniValue& val_)
     return true;
 }
 
+bool UniValue::push_back(UniValue&& val_)
+{
+    if (typ != VARR)
+        return false;
+
+    values.push_back(val_);
+    return true;
+}
+
 bool UniValue::push_backV(const std::vector<UniValue>& vec)
 {
     if (typ != VARR)
@@ -239,4 +248,3 @@ const UniValue& find_value(const UniValue& obj, const std::string& name)
 
     return NullUniValue;
 }
-

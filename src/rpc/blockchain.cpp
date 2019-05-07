@@ -120,14 +120,14 @@ UniValue blockheaderToJSON(const CBlockIndex* tip, const CBlockIndex* blockindex
 UniValue blockToJSON(const CBlock& block, const CBlockIndex* tip, const CBlockIndex* blockindex, bool txDetails)
 {
     UniValue result(UniValue::VOBJ);
-    result.pushKV("hash", blockindex->GetBlockHash().GetHex());
-    const CBlockIndex* pnext;
-    int confirmations = ComputeNextBlockAndDepth(tip, blockindex, pnext);
-    result.pushKV("confirmations", confirmations);
+    // result.pushKV("hash", blockindex->GetBlockHash().GetHex());
+    const CBlockIndex* pnext{nullptr};
+    // int confirmations = ComputeNextBlockAndDepth(tip, blockindex, pnext);
+    // result.pushKV("confirmations", confirmations);
     result.pushKV("strippedsize", (int)::GetSerializeSize(block, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS));
     result.pushKV("size", (int)::GetSerializeSize(block, PROTOCOL_VERSION));
     result.pushKV("weight", (int)::GetBlockWeight(block));
-    result.pushKV("height", blockindex->nHeight);
+    // result.pushKV("height", blockindex->nHeight);
     result.pushKV("version", block.nVersion);
     result.pushKV("versionHex", strprintf("%08x", block.nVersion));
     result.pushKV("merkleroot", block.hashMerkleRoot.GetHex());
@@ -138,22 +138,22 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* tip, const CBlockIn
         {
             UniValue objTx(UniValue::VOBJ);
             TxToUniv(*tx, uint256(), objTx, true, RPCSerializationFlags());
-            txs.push_back(objTx);
+            txs.push_back(std::move(objTx));
         }
         else
             txs.push_back(tx->GetHash().GetHex());
     }
-    result.pushKV("tx", txs);
+    result.pushKV("tx", std::move(txs));
     result.pushKV("time", block.GetBlockTime());
-    result.pushKV("mediantime", (int64_t)blockindex->GetMedianTimePast());
+    // result.pushKV("mediantime", (int64_t)blockindex->GetMedianTimePast());
     result.pushKV("nonce", (uint64_t)block.nNonce);
     result.pushKV("bits", strprintf("%08x", block.nBits));
-    result.pushKV("difficulty", GetDifficulty(blockindex));
-    result.pushKV("chainwork", blockindex->nChainWork.GetHex());
-    result.pushKV("nTx", (uint64_t)blockindex->nTx);
+    // result.pushKV("difficulty", GetDifficulty(blockindex));
+    // result.pushKV("chainwork", blockindex->nChainWork.GetHex());
+    // result.pushKV("nTx", (uint64_t)blockindex->nTx);
 
-    if (blockindex->pprev)
-        result.pushKV("previousblockhash", blockindex->pprev->GetBlockHash().GetHex());
+    // if (blockindex->pprev)
+        // result.pushKV("previousblockhash", blockindex->pprev->GetBlockHash().GetHex());
     if (pnext)
         result.pushKV("nextblockhash", pnext->GetBlockHash().GetHex());
     return result;
@@ -176,7 +176,7 @@ static UniValue getblockcount(const JSONRPCRequest& request)
             }.ToString());
 
     LOCK(cs_main);
-    return chainActive.Height();
+    return UniValue(chainActive.Height());
 }
 
 static UniValue getbestblockhash(const JSONRPCRequest& request)
@@ -196,7 +196,7 @@ static UniValue getbestblockhash(const JSONRPCRequest& request)
             }.ToString());
 
     LOCK(cs_main);
-    return chainActive.Tip()->GetBlockHash().GetHex();
+    return UniValue(chainActive.Tip()->GetBlockHash().GetHex());
 }
 
 void RPCNotifyBlockChange(bool ibd, const CBlockIndex * pindex)
@@ -355,7 +355,7 @@ static UniValue syncwithvalidationinterfacequeue(const JSONRPCRequest& request)
             }.ToString());
     }
     SyncWithValidationInterfaceQueue();
-    return NullUniValue;
+    return UniValue(NullUniValue);
 }
 
 static UniValue getdifficulty(const JSONRPCRequest& request)
@@ -375,7 +375,7 @@ static UniValue getdifficulty(const JSONRPCRequest& request)
             }.ToString());
 
     LOCK(cs_main);
-    return GetDifficulty(chainActive.Tip());
+    return UniValue(GetDifficulty(chainActive.Tip()));
 }
 
 static std::string EntryDescriptionString()
@@ -526,7 +526,7 @@ static UniValue getrawmempool(const JSONRPCRequest& request)
     if (!request.params[0].isNull())
         fVerbose = request.params[0].get_bool();
 
-    return MempoolToJSON(::mempool, fVerbose);
+    return UniValue(MempoolToJSON(::mempool, fVerbose));
 }
 
 static UniValue getmempoolancestors(const JSONRPCRequest& request)
@@ -730,7 +730,7 @@ static UniValue getblockhash(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
     CBlockIndex* pblockindex = chainActive[nHeight];
-    return pblockindex->GetBlockHash().GetHex();
+    return UniValue(pblockindex->GetBlockHash().GetHex());
 }
 
 static UniValue getblockheader(const JSONRPCRequest& request)
