@@ -1044,13 +1044,7 @@ static UniValue pruneblockchain(const JSONRPCRequest& request)
         height = chainHeight - MIN_BLOCKS_TO_KEEP;
     }
 
-    PruneBlockFilesManual(height);
-    const CBlockIndex* block = ::ChainActive().Tip();
-    assert(block);
-    while (block->pprev && (block->pprev->nStatus & BLOCK_HAVE_DATA)) {
-        block = block->pprev;
-    }
-    return uint64_t(block->nHeight);
+    return uint64_t(PruneBlockFilesManual(height));
 }
 
 static UniValue gettxoutsetinfo(const JSONRPCRequest& request)

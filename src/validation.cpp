@@ -319,8 +319,12 @@ enum class FlushStateMode {
 };
 
 // See definition for documentation
-static bool FlushStateToDisk(const CChainParams& chainParams, CValidationState &state, FlushStateMode mode, int nManualPruneHeight=0);
-static void FindFilesToPruneManual(std::set<int>& setFilesToPrune, int nManualPruneHeight);
+static bool FlushStateToDisk(const CChainParams& chainParams, CValidationState &state, FlushStateMode mode, int& nManualPruneHeight);
+static bool FlushStateToDisk(const CChainParams& chain_params, CValidationState& state, FlushStateMode mode) {
+    int manual_prune_height = 0;
+    return FlushStateToDisk(chain_params, state, mode, manual_prune_height);
+}
+static int FindFilesToPruneManual(std::set<int>& setFilesToPrune, int nManualPruneHeight);
 static void FindFilesToPrune(std::set<int>& setFilesToPrune, uint64_t nPruneAfterHeight);
 bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, bool cacheSigStore, bool cacheFullScriptStore, PrecomputedTransactionData& txdata, std::vector<CScriptCheck> *pvChecks = nullptr);
 static FILE* OpenUndoFile(const FlatFilePos &pos, bool fReadOnly = false);
@@ -2098,7 +2102,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
  * If FlushStateMode::NONE is used, then FlushStateToDisk(...) won't do anything
  * besides checking if we need to prune.
  */
-bool static FlushStateToDisk(const CChainParams& chainparams, CValidationState &state, FlushStateMode mode, int nManualPruneHeight) {
+bool static FlushStateToDisk(const CChainParams& chainparams, CValidationState &state, FlushStateMode mode, int& nManualPruneHeight) {
     int64_t nMempoolUsage = mempool.DynamicMemoryUsage();
     LOCK(cs_main);
     static int64_t nLastWrite = 0;
@@ -2112,7 +2116,7 @@ bool static FlushStateToDisk(const CChainParams& chainparams, CValidationState &
         LOCK(cs_LastBlockFile);
         if (fPruneMode && (fCheckForPruning || nManualPruneHeight > 0) && !fReindex) {
             if (nManualPruneHeight > 0) {
-                FindFilesToPruneManual(setFilesToPrune, nManualPruneHeight);
+                nManualPruneHeight = FindFilesToPruneManual(setFilesToPrune, nManualPruneHeight);
             } else {
                 FindFilesToPrune(setFilesToPrune, chainparams.PruneAfterHeight());
                 fCheckForPruning = false;
@@ -3699,13 +3703,14 @@ void UnlinkPrunedFiles(const std::set<int>& setFilesToPrune)
 }
 
 /* Calculate the block/rev files to delete based on height specified by user with RPC command pruneblockchain */
-static void FindFilesToPruneManual(std::set<int>& setFilesToPrune, int nManualPruneHeight)
+static int FindFilesToPruneManual(std::set<int>& setFilesToPrune, int nManualPruneHeight)
 {
     assert(fPruneMode && nManualPruneHeight > 0);
 
+    int prune_height = 0;
     LOCK2(cs_main, cs_LastBlockFile);
     if (::ChainActive().Tip() == nullptr)
-        return;
+        return prune_height;
 
     // last block to prune is the lesser of (user-specified height, MIN_BLOCKS_TO_KEEP from the tip)
     unsigned int nLastBlockWeCanPrune = std::min((unsigned)nManualPruneHeight, ::ChainActive().Tip()->nHeight - MIN_BLOCKS_TO_KEEP);
@@ -3715,19 +3720,22 @@ static void FindFilesToPruneManual(std::set<int>& setFilesToPrune, int nManualPr
             continue;
         PruneOneBlockFile(fileNumber);
         setFilesToPrune.insert(fileNumber);
+        prune_height = std::max((int)   vinfoBlockFile[fileNumber].nHeightLast, prune_height);
         count++;
     }
     LogPrintf("Prune (Manual): prune_height=%d removed %d blk/rev pairs\n", nLastBlockWeCanPrune, count);
+    return prune_height;
 }
 
 /* This function is called from the RPC code for pruneblockchain */
-void PruneBlockFilesManual(int nManualPruneHeight)
+int PruneBlockFilesManual(int nManualPruneHeight)
 {
     CValidationState state;
     const CChainParams& chainparams = Params();
     if (!FlushStateToDisk(chainparams, state, FlushStateMode::NONE, nManualPruneHeight)) {
         LogPrintf("%s: failed to flush state (%s)\n", __func__, FormatStateMessage(state));
     }
+    return nManualPruneHeight;
 }
 
 /**
