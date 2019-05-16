@@ -102,6 +102,14 @@ static void RescanWallet(CWallet& wallet, const WalletRescanReserver& reserver, 
     }
 }
 
+static void EnsureBlockDataFromTime(interfaces::Chain::Lock& locked_chain, int64_t timestamp)
+{
+    const Optional<int> height = locked_chain->findFirstBlockWithTimeAndHeight(timestamp - TIMESTAMP_WINDOW, 0, nullptr);
+    if (height && !locked_chain->haveBlockOnDisk(*height)) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Pruned blocks required to import keys");
+    }
+}
+
 UniValue importprivkey(const JSONRPCRequest& request)
 {
     std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
@@ -583,13 +591,6 @@ UniValue importwallet(const JSONRPCRequest& request)
                 },
             }.ToString());
 
-    if (pwallet->chain().havePruned()) {
-        // Exit early and print an error.
-        // If a block is pruned after this check, we will import the key(s),
-        // but fail the rescan with a generic error.
-        throw JSONRPCError(RPC_WALLET_ERROR, "Importing wallets is disabled when blocks are pruned");
-    }
-
     WalletRescanReserver reserver(pwallet);
     if (!reserver.reserve()) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Wallet is currently rescanning. Abort existing rescan or wait.");
@@ -647,15 +648,20 @@ UniValue importwallet(const JSONRPCRequest& request)
                         fLabel = true;
                     }
                 }
+                nTimeBegin = std::min(nTimeBegin, nTime);
                 keys.push_back(std::make_tuple(key, nTime, fLabel, strLabel));
             } else if(IsHex(vstr[0])) {
                 std::vector<unsigned char> vData(ParseHex(vstr[0]));
                 CScript script = CScript(vData.begin(), vData.end());
                 int64_t birth_time = DecodeDumpTime(vstr[1]);
+                if (birth_time > 0) nTimeBegin = std::min(nTimeBegin, birth_time);
                 scripts.push_back(std::pair<CScript, int64_t>(script, birth_time));
             }
         }
         file.close();
+        if (pwallet->chain().havePruned()) {
+            EnsureBlockDataFromTime(locked_chain, nTimeBegin)
+        }
         // We now know whether we are importing private keys, so we can error if private keys are disabled
         if (keys.size() > 0 && pwallet->IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS)) {
             pwallet->chain().showProgress("", 100, false); // hide progress dialog in GUI
@@ -685,7 +691,6 @@ UniValue importwallet(const JSONRPCRequest& request)
             pwallet->mapKeyMetadata[keyid].nCreateTime = time;
             if (has_label)
                 pwallet->SetAddressBook(PKHash(keyid), label, "receive");
-            nTimeBegin = std::min(nTimeBegin, time);
             progress++;
         }
         for (const auto& script_pair : scripts) {
@@ -704,7 +709,6 @@ UniValue importwallet(const JSONRPCRequest& request)
             }
             if (time > 0) {
                 pwallet->m_script_metadata[id].nCreateTime = time;
-                nTimeBegin = std::min(nTimeBegin, time);
             }
             progress++;
         }
