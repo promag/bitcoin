@@ -1201,7 +1201,7 @@ public:
     void SetWalletFlag(uint64_t flags);
 
     /** Unsets a single wallet flag */
-    void UnsetWalletFlag(uint64_t flag);
+    void UnsetWalletFlag(WalletBatch& batch, uint64_t flag);
 
     /** check if a certain wallet flag is set */
     bool IsWalletFlagSet(uint64_t flag);
