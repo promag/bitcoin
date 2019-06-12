@@ -1569,9 +1569,7 @@ UniValue utxoupdatepsbt(const JSONRPCRequest& request)
     }
 
     // Update script/keypath information using descriptor data.
-    for (unsigned int i = 0; i < psbtx.tx->vout.size(); ++i) {
-        UpdatePSBTOutput(public_provider, psbtx, i);
-    }
+    UpdatePSBT(public_provider, psbtx);
 
     CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
     ssTx << psbtx;

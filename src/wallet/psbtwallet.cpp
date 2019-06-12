@@ -43,9 +43,7 @@ TransactionError FillPSBT(const CWallet* pwallet, PartiallySignedTransaction& ps
     }
 
     // Fill in the bip32 keypaths and redeemscripts for the outputs so that hardware wallets can identify change
-    for (unsigned int i = 0; i < psbtx.tx->vout.size(); ++i) {
-        UpdatePSBTOutput(HidingSigningProvider(pwallet, true, !bip32derivs), psbtx, i);
-    }
+    UpdatePSBT(HidingSigningProvider(pwallet, true, !bip32derivs), psbtx);
 
     return TransactionError::OK;
 }
