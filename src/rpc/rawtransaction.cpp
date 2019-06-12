@@ -1490,9 +1490,8 @@ UniValue converttopsbt(const JSONRPCRequest& request)
 
 UniValue utxoupdatepsbt(const JSONRPCRequest& request)
 {
-    if (request.fHelp || request.params.size() < 1 || request.params.size() > 2) {
-        throw std::runtime_error(
-            RPCHelpMan{"utxoupdatepsbt",
+    const RPCHelpMan help{
+            "utxoupdatepsbt",
             "\nUpdates all segwit inputs and outputs in a PSBT with data from output descriptors, the UTXO set or the mempool.\n",
             {
                 {"psbt", RPCArg::Type::STR, RPCArg::Optional::NO, "A base64 string of a PSBT"},
@@ -1509,7 +1508,11 @@ UniValue utxoupdatepsbt(const JSONRPCRequest& request)
             },
             RPCExamples {
                 HelpExampleCli("utxoupdatepsbt", "\"psbt\"")
-            }}.ToString());
+            }
+    };
+
+    if (request.fHelp || !help.IsValidNumArgs(request.params.size())) {
+        throw std::runtime_error(help.ToString());
     }
 
     RPCTypeCheck(request.params, {UniValue::VSTR, UniValue::VARR}, true);
@@ -1524,9 +1527,8 @@ UniValue utxoupdatepsbt(const JSONRPCRequest& request)
     // Parse descriptors, if any.
     FlatSigningProvider provider;
     if (!request.params[1].isNull()) {
-        auto descs = request.params[1].get_array();
-        for (size_t i = 0; i < descs.size(); ++i) {
-            EvalDescriptorStringOrObject(descs[i], provider);
+        for (const UniValue& desc : request.params[1].get_array().getValues()) {
+            EvalDescriptorStringOrObject(desc, provider);
         }
     }
     // We don't actually need private keys further on; hide them as a precaution.
