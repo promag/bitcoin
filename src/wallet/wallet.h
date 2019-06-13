@@ -85,7 +85,6 @@ static constexpr size_t DUMMY_NESTED_P2WPKH_INPUT_SIZE = 91;
 
 class CCoinControl;
 class COutput;
-class CReserveKey;
 class CScript;
 class CWalletTx;
 struct FeeCalculation;
@@ -236,8 +235,8 @@ public:
 
 /** A wrapper to reserve a key from a wallet keypool
  *
- * CReserveKey is used to reserve a key from the keypool. It is passed around
- * during the CreateTransaction/CommitTransaction procedure.
+ * CReserveKey is used to reserve a key from the keypool.
+ * It is currently only used inside of CreateTransaction.
  *
  * Instantiating a CReserveKey does not reserve a keypool key. To do so,
  * GetReservedKey() needs to be called on the object. Once a key has been
@@ -1053,9 +1052,9 @@ public:
      * selected by SelectCoins(); Also create the change output, when needed
      * @note passing nChangePosInOut as -1 will result in setting a random position
      */
-    bool CreateTransaction(interfaces::Chain::Lock& locked_chain, const std::vector<CRecipient>& vecSend, CTransactionRef& tx, CReserveKey& reservekey, CAmount& nFeeRet, int& nChangePosInOut,
+    bool CreateTransaction(interfaces::Chain::Lock& locked_chain, const std::vector<CRecipient>& vecSend, CTransactionRef& tx, CAmount& nFeeRet, int& nChangePosInOut,
                            std::string& strFailReason, const CCoinControl& coin_control, bool sign = true);
-    bool CommitTransaction(CTransactionRef tx, mapValue_t mapValue, std::vector<std::pair<std::string, std::string>> orderForm, CReserveKey& reservekey, CValidationState& state);
+    bool CommitTransaction(CTransactionRef tx, mapValue_t mapValue, std::vector<std::pair<std::string, std::string>> orderForm, CValidationState& state);
 
     bool DummySignTx(CMutableTransaction &txNew, const std::set<CTxOut> &txouts, bool use_max_sig = false) const
     {
