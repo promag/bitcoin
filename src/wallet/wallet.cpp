@@ -3078,10 +3078,6 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
         }
     }
 
-    // Before we return success, we assume any change key will be used to prevent
-    // accidental re-use.
-    reservekey.KeepKey();
-
     WalletLogPrintf("Fee Calculation: Fee:%d Bytes:%u Needed:%d Tgt:%d (requested %d) Reason:\"%s\" Decay %.5f: Estimation: (%g - %g) %.2f%% %.1f/(%.1f %d mem %.1f out) Fail: (%g - %g) %.2f%% %.1f/(%.1f %d mem %.1f out)\n",
               nFeeRet, nBytes, nFeeNeeded, feeCalc.returnedTarget, feeCalc.desiredTarget, StringForFeeReason(feeCalc.reason), feeCalc.est.decay,
               feeCalc.est.pass.start, feeCalc.est.pass.end,
@@ -3462,32 +3458,6 @@ bool CWallet::ReserveKeyFromKeyPool(int64_t& nIndex, CKeyPool& keypool, bool fRe
     return true;
 }
 
-void CWallet::KeepKey(int64_t nIndex)
-{
-    // Remove from key pool
-    WalletBatch batch(*database);
-    batch.ErasePool(nIndex);
-    WalletLogPrintf("keypool keep %d\n", nIndex);
-}
-
-void CWallet::ReturnKey(int64_t nIndex, bool fInternal, const CPubKey& pubkey)
-{
-    // Return to key pool
-    {
-        LOCK(cs_wallet);
-        if (fInternal) {
-            setInternalKeyPool.insert(nIndex);
-        } else if (!set_pre_split_keypool.empty()) {
-            set_pre_split_keypool.insert(nIndex);
-        } else {
-            setExternalKeyPool.insert(nIndex);
-        }
-        m_pool_key_to_index[pubkey.GetID()] = nIndex;
-        NotifyCanGetAddressesChanged();
-    }
-    WalletLogPrintf("keypool return %d\n", nIndex);
-}
-
 bool CWallet::GetKeyFromPool(CPubKey& result, bool internal)
 {
     if (!CanGetAddresses(internal)) {
@@ -3504,7 +3474,9 @@ bool CWallet::GetKeyFromPool(CPubKey& result, bool internal)
             result = GenerateNewKey(batch, internal);
             return true;
         }
-        KeepKey(nIndex);
+        WalletBatch batch(*database);
+        batch.ErasePool(nIndex);
+        WalletLogPrintf("keypool keep %d\n", nIndex);
         result = keypool.vchPubKey;
     }
     return true;
@@ -3691,39 +3663,14 @@ std::set<CTxDestination> CWallet::GetLabelAddresses(const std::string& label) co
 
 bool CReserveKey::GetReservedKey(CPubKey& pubkey, bool internal)
 {
-    if (!pwallet->CanGetAddresses(internal)) {
-        return false;
-    }
-
-    if (nIndex == -1)
-    {
-        CKeyPool keypool;
-        if (!pwallet->ReserveKeyFromKeyPool(nIndex, keypool, internal)) {
+    if (!vchPubKey.IsValid()) {
+        if (!pwallet->GetKeyFromPool(vchPubKey, internal)) {
             return false;
         }
-        vchPubKey = keypool.vchPubKey;
-        fInternal = keypool.fInternal;
     }
     assert(vchPubKey.IsValid());
     pubkey = vchPubKey;
     return true;
-}
-
-void CReserveKey::KeepKey()
-{
-    if (nIndex != -1)
-        pwallet->KeepKey(nIndex);
-    nIndex = -1;
-    vchPubKey = CPubKey();
-}
-
-void CReserveKey::ReturnKey()
-{
-    if (nIndex != -1) {
-        pwallet->ReturnKey(nIndex, fInternal, vchPubKey);
-    }
-    nIndex = -1;
-    vchPubKey = CPubKey();
 }
 
 void CWallet::MarkReserveKeysAsUsed(int64_t keypool_id)

@@ -252,36 +252,19 @@ class CReserveKey
 {
 protected:
     //! The wallet to reserve the keypool key from
-    CWallet* pwallet;
-    //! The index of the key in the keypool
-    int64_t nIndex{-1};
+    CWallet* const pwallet;
     //! The public key
     CPubKey vchPubKey;
-    //! Whether this is from the internal (change output) keypool
-    bool fInternal{false};
 
 public:
     //! Construct a CReserveKey object. This does NOT reserve a key from the keypool yet
-    explicit CReserveKey(CWallet* pwalletIn)
-    {
-        pwallet = pwalletIn;
-    }
+    explicit CReserveKey(CWallet* pwalletIn) : pwallet(pwalletIn) {}
 
     CReserveKey(const CReserveKey&) = delete;
     CReserveKey& operator=(const CReserveKey&) = delete;
 
-    //! Destructor. If a key has been reserved and not KeepKey'ed, it will be returned to the keypool
-    ~CReserveKey()
-    {
-        ReturnKey();
-    }
-
     //! Reserve a key from the keypool
     bool GetReservedKey(CPubKey &pubkey, bool internal = false);
-    //! Return a key to the keypool
-    void ReturnKey();
-    //! Keep the key. Do not return it to the keypool when this object goes out of scope
-    void KeepKey();
 };
 
 /** Address book data */
@@ -1107,8 +1090,6 @@ public:
      *     or external keypool
      */
     bool ReserveKeyFromKeyPool(int64_t& nIndex, CKeyPool& keypool, bool fRequestedInternal);
-    void KeepKey(int64_t nIndex);
-    void ReturnKey(int64_t nIndex, bool fInternal, const CPubKey& pubkey);
     bool GetKeyFromPool(CPubKey &key, bool internal = false);
     int64_t GetOldestKeyPoolTime();
     /**
