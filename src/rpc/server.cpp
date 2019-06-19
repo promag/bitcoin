@@ -7,7 +7,6 @@
 
 #include <fs.h>
 #include <key_io.h>
-#include <rpc/util.h>
 #include <shutdown.h>
 #include <sync.h>
 #include <util/strencodings.h>
@@ -178,8 +177,6 @@ UniValue stop(const JSONRPCRequest& jsonRequest)
 
 static UniValue uptime(const JSONRPCRequest& jsonRequest)
 {
-    if (jsonRequest.fHelp || jsonRequest.params.size() > 0)
-        throw std::runtime_error(
             RPCHelpMan{"uptime",
                 "\nReturns the total uptime of the server.\n",
                             {},
@@ -190,15 +187,13 @@ static UniValue uptime(const JSONRPCRequest& jsonRequest)
                     HelpExampleCli("uptime", "")
                 + HelpExampleRpc("uptime", "")
                 },
-            }.ToString());
+            }.Check(jsonRequest);
 
     return GetTime() - GetStartupTime();
 }
 
 static UniValue getrpcinfo(const JSONRPCRequest& request)
 {
-    if (request.fHelp || request.params.size() > 0) {
-        throw std::runtime_error(
             RPCHelpMan{"getrpcinfo",
                 "\nReturns details of the RPC server.\n",
                 {},
@@ -216,9 +211,7 @@ static UniValue getrpcinfo(const JSONRPCRequest& request)
                 RPCExamples{
                     HelpExampleCli("getrpcinfo", "")
                 + HelpExampleRpc("getrpcinfo", "")},
-            }.ToString()
-        );
-    }
+            }.Check(request);
 
     LOCK(g_rpc_server_info.mutex);
     UniValue active_commands(UniValue::VARR);
