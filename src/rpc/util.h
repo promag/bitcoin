@@ -228,6 +228,8 @@ struct RPCExamples {
     std::string ToDescriptionString() const;
 };
 
+class JSONRPCRequest;
+
 class RPCHelpMan
 {
 public:
@@ -236,6 +238,7 @@ public:
     std::string ToString() const;
     /** If the supplied number of args is neither too small nor too high */
     bool IsValidNumArgs(size_t num_args) const;
+    inline void Check(const JSONRPCRequest& request) const;
 
 private:
     const std::string m_name;
