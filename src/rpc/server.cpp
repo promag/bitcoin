@@ -177,27 +177,27 @@ UniValue stop(const JSONRPCRequest& jsonRequest)
 
 static UniValue uptime(const JSONRPCRequest& jsonRequest)
 {
-            RPCHelpMan{"uptime",
-                "\nReturns the total uptime of the server.\n",
-                            {},
-                            RPCResult{
-                        "ttt        (numeric) The number of seconds that the server has been running\n"
-                            },
-                RPCExamples{
-                    HelpExampleCli("uptime", "")
-                + HelpExampleRpc("uptime", "")
-                },
-            }.Check(jsonRequest);
+    RPCHelpMan{
+        "uptime",
+        "\nReturns the total uptime of the server.\n",
+        {},
+        RPCResult{
+            "ttt        (numeric) The number of seconds that the server has been running\n"},
+        RPCExamples{
+            HelpExampleCli("uptime", "") + HelpExampleRpc("uptime", "")},
+    }
+        .Check(jsonRequest);
 
     return GetTime() - GetStartupTime();
 }
 
 static UniValue getrpcinfo(const JSONRPCRequest& request)
 {
-            RPCHelpMan{"getrpcinfo",
-                "\nReturns details of the RPC server.\n",
-                {},
-                RPCResult{
+    RPCHelpMan{
+        "getrpcinfo",
+        "\nReturns details of the RPC server.\n",
+        {},
+        RPCResult{
             "{\n"
             " \"active_commands\" (array) All active commands\n"
             "  [\n"
@@ -206,12 +206,11 @@ static UniValue getrpcinfo(const JSONRPCRequest& request)
             "    \"duration\"     (numeric)  The running time in microseconds\n"
             "   },...\n"
             "  ]\n"
-            "}\n"
-                },
-                RPCExamples{
-                    HelpExampleCli("getrpcinfo", "")
-                + HelpExampleRpc("getrpcinfo", "")},
-            }.Check(request);
+            "}\n"},
+        RPCExamples{
+            HelpExampleCli("getrpcinfo", "") + HelpExampleRpc("getrpcinfo", "")},
+    }
+        .Check(request);
 
     LOCK(g_rpc_server_info.mutex);
     UniValue active_commands(UniValue::VARR);

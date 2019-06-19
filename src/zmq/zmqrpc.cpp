@@ -15,10 +15,11 @@ namespace {
 
 UniValue getzmqnotifications(const JSONRPCRequest& request)
 {
-            RPCHelpMan{"getzmqnotifications",
-                "\nReturns information about the active ZeroMQ notifications.\n",
-                {},
-                RPCResult{
+    RPCHelpMan{
+        "getzmqnotifications",
+        "\nReturns information about the active ZeroMQ notifications.\n",
+        {},
+        RPCResult{
             "[\n"
             "  {                        (json object)\n"
             "    \"type\": \"pubhashtx\",   (string) Type of notification\n"
@@ -26,13 +27,11 @@ UniValue getzmqnotifications(const JSONRPCRequest& request)
             "    \"hwm\": n                 (numeric) Outbound message high water mark\n"
             "  },\n"
             "  ...\n"
-            "]\n"
-                },
-                RPCExamples{
-                    HelpExampleCli("getzmqnotifications", "")
-            + HelpExampleRpc("getzmqnotifications", "")
-                },
-            }.Check(request);
+            "]\n"},
+        RPCExamples{
+            HelpExampleCli("getzmqnotifications", "") + HelpExampleRpc("getzmqnotifications", "")},
+    }
+        .Check(request);
 
     UniValue result(UniValue::VARR);
     if (g_zmq_notification_interface != nullptr) {

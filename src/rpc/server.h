@@ -44,7 +44,8 @@ public:
     void parse(const UniValue& valRequest);
 };
 
-inline void RPCHelpMan::Check(const JSONRPCRequest& request) const {
+inline void RPCHelpMan::Check(const JSONRPCRequest& request) const
+{
     if (request.fHelp || !IsValidNumArgs(request.params.size())) throw std::runtime_error(ToString());
 }
 
