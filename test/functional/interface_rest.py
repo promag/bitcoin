@@ -295,6 +295,8 @@ class RESTTest (BitcoinTestFramework):
         # the size of the memory pool should be greater than 3x ~100 bytes
         assert_greater_than(json_obj['bytes'], 300)
 
+        assert_equal(self.test_rest_request("/mempool/info/with_fee_histogram"), self.nodes[0].getmempoolinfo(with_fee_histogram=True))
+
         # Check that there are our submitted transactions in the TX memory pool
         json_obj = self.test_rest_request("/mempool/contents")
         for i, tx in enumerate(txs):
