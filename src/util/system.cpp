@@ -180,7 +180,7 @@ static std::string SettingName(const std::string& arg)
  * options that are not normally boolean (e.g. using -nodebuglogfile to request
  * that debug log output is not sent to any file at all).
  */
-static bool InterpretKey(std::string& section, std::string& key, const std::string* value)
+static bool InterpretKey(std::string& section, std::string& key, const Optional<std::string>& value)
 {
     // Split section name from key name for keys like "testnet.foo" or "regtest.bar"
     size_t option_index = key.find('.');
@@ -202,7 +202,7 @@ static bool InterpretKey(std::string& section, std::string& key, const std::stri
  * isn't allowed by the flags, otherwise return the parsed value.
  */
 static Optional<util::SettingsValue> InterpretValue(const std::string& key,
-    const std::string* value,
+    const Optional<std::string>& value,
     bool negated,
     unsigned int flags,
     std::string& error)
@@ -213,7 +213,7 @@ static Optional<util::SettingsValue> InterpretValue(const std::string& key,
         if (negated) {
             // Double negatives like -nofoo=0 are supported (but discouraged)
             if (value && !InterpretBool(*value)) {
-                LogPrintf("Warning: parsed potentially confusing double-negative -%s=%s\n", key, value);
+                LogPrintf("Warning: parsed potentially confusing double-negative -%s=%s\n", key, *value);
                 return util::SettingsValue{true};
             }
             return util::SettingsValue{false};
@@ -369,10 +369,10 @@ bool ArgsManager::ParseParameters(int argc, const char* const argv[], std::strin
         // Transform -foo to foo
         key.erase(0, 1);
         std::string section;
-        bool negated = !InterpretKey(section, key, val.get_ptr());
+        bool negated = !InterpretKey(section, key, val);
         Optional<unsigned int> flags = GetArgFlags('-' + key);
         if (flags) {
-            Optional<util::SettingsValue> value = InterpretValue(key, val.get_ptr(), negated, *flags, error);
+            Optional<util::SettingsValue> value = InterpretValue(key, val, negated, *flags, error);
             if (!value) return false;
 
             // Weird behavior preserved for backwards compatibility: command
@@ -794,14 +794,14 @@ bool ArgsManager::ReadConfigStream(std::istream& stream, const std::string& file
     for (const std::pair<std::string, std::string>& option : options) {
         std::string section;
         std::string key = option.first;
-        bool negated = !InterpretKey(section, key, &option.second);
+        bool negated = !InterpretKey(section, key, option.second);
         Optional<unsigned int> flags = GetArgFlags('-' + key);
         if (flags) {
             if (!(*flags & (ALLOW_ANY | ALLOW_LIST)) && m_settings.ro_config[section].count(key)) {
                 error = strprintf("Multiple values specified for -%s in same section of config file.", key);
                 return false;
             }
-            Optional<util::SettingsValue> value = InterpretValue(key, &option.second, negated, *flags, error);
+            Optional<util::SettingsValue> value = InterpretValue(key, option.second, negated, *flags, error);
             if (!value) return false;
             m_settings.ro_config[section][key].push_back(*value);
         } else {
