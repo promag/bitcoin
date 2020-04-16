@@ -219,7 +219,7 @@ SendCoinsDialog::~SendCoinsDialog()
     delete ui;
 }
 
-bool SendCoinsDialog::PrepareSendText(QString& question_string, QString& informative_text, QString& detailed_text)
+std::unique_ptr<WalletModelTransaction> SendCoinsDialog::PrepareSendText(QString& question_string, QString& informative_text, QString& detailed_text)
 {
     QList<SendCoinsRecipient> recipients;
     bool valid = true;
@@ -243,7 +243,7 @@ bool SendCoinsDialog::PrepareSendText(QString& question_string, QString& informa
 
     if(!valid || recipients.isEmpty())
     {
-        return false;
+        return nullptr;
     }
 
     fNewRecipientAllowed = false;
@@ -252,11 +252,11 @@ bool SendCoinsDialog::PrepareSendText(QString& question_string, QString& informa
     {
         // Unlock wallet was cancelled
         fNewRecipientAllowed = true;
-        return false;
+        return nullptr;
     }
 
     // prepare transaction for getting txFee earlier
-    m_current_transaction = MakeUnique<WalletModelTransaction>(recipients);
+    auto transaction = MakeUnique<WalletModelTransaction>(recipients);
     WalletModel::SendCoinsReturn prepareStatus;
 
     // Always use a CCoinControl instance, use the CoinControlDialog instance if CoinControl has been enabled
@@ -266,20 +266,20 @@ bool SendCoinsDialog::PrepareSendText(QString& question_string, QString& informa
 
     updateCoinControlState(ctrl);
 
-    prepareStatus = model->prepareTransaction(*m_current_transaction, ctrl);
+    prepareStatus = model->prepareTransaction(*transaction, ctrl);
 
     // process prepareStatus and on error generate message shown to user
     processSendCoinsReturn(prepareStatus,
-        BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), m_current_transaction->getTransactionFee()));
+        BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), transaction->getTransactionFee()));
 
     if(prepareStatus.status != WalletModel::OK) {
         fNewRecipientAllowed = true;
-        return false;
+        return nullptr;
     }
 
-    CAmount txFee = m_current_transaction->getTransactionFee();
+    CAmount txFee = transaction->getTransactionFee();
     QStringList formatted;
-    for (const SendCoinsRecipient &rcp : m_current_transaction->getRecipients())
+    for (const SendCoinsRecipient &rcp : transaction->getRecipients())
     {
         // generate amount string with wallet name in case of multiwallet
         QString amount = BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), rcp.amount);
@@ -328,7 +328,7 @@ bool SendCoinsDialog::PrepareSendText(QString& question_string, QString& informa
         question_string.append("</b>");
 
         // append transaction size
-        question_string.append(" (" + QString::number((double)m_current_transaction->getTransactionSize() / 1000) + " kB): ");
+        question_string.append(" (" + QString::number((double)transaction->getTransactionSize() / 1000) + " kB): ");
 
         // append transaction fee value
         question_string.append("<span style='color:#aa0000; font-weight:bold;'>");
@@ -347,7 +347,7 @@ bool SendCoinsDialog::PrepareSendText(QString& question_string, QString& informa
 
     // add total amount in all subdivision units
     question_string.append("<hr />");
-    CAmount totalAmount = m_current_transaction->getTotalTransactionAmount() + txFee;
+    CAmount totalAmount = transaction->getTotalTransactionAmount() + txFee;
     QStringList alternativeUnits;
     for (const BitcoinUnits::Unit u : BitcoinUnits::availableUnits())
     {
@@ -367,7 +367,7 @@ bool SendCoinsDialog::PrepareSendText(QString& question_string, QString& informa
         question_string = question_string.arg("<br /><br />" + formatted.at(0));
     }
 
-    return true;
+    return transaction;
 }
 
 void SendCoinsDialog::on_sendButton_clicked()
@@ -376,8 +376,8 @@ void SendCoinsDialog::on_sendButton_clicked()
         return;
 
     QString question_string, informative_text, detailed_text;
-    if (!PrepareSendText(question_string, informative_text, detailed_text)) return;
-    assert(m_current_transaction);
+    auto transaction = PrepareSendText(question_string, informative_text, detailed_text);
+    if (!transaction) return;
 
     const QString confirmation = model->wallet().privateKeysDisabled() ? tr("Confirm transaction proposal") : tr("Confirm send coins");
     const QString confirmButtonText = model->wallet().privateKeysDisabled() ? tr("Create Unsigned") : tr("Send");
@@ -393,7 +393,7 @@ void SendCoinsDialog::on_sendButton_clicked()
 
     bool send_failure = false;
     if (model->wallet().privateKeysDisabled()) {
-        CMutableTransaction mtx = CMutableTransaction{*(m_current_transaction->getWtx())};
+        CMutableTransaction mtx = CMutableTransaction{*(transaction->getWtx())};
         PartiallySignedTransaction psbtx(mtx);
         bool complete = false;
         const TransactionError err = model->wallet().fillPSBT(SIGHASH_ALL, false /* sign */, true /* bip32derivs */, psbtx, complete);
@@ -413,7 +413,7 @@ void SendCoinsDialog::on_sendButton_clicked()
             QString selectedFilter;
             QString fileNameSuggestion = "";
             bool first = true;
-            for (const SendCoinsRecipient &rcp : m_current_transaction->getRecipients()) {
+            for (const SendCoinsRecipient &rcp : transaction->getRecipients()) {
                 if (!first) {
                     fileNameSuggestion.append(" - ");
                 }
@@ -442,12 +442,12 @@ void SendCoinsDialog::on_sendButton_clicked()
         }
     } else {
         // now send the prepared transaction
-        WalletModel::SendCoinsReturn sendStatus = model->sendCoins(*m_current_transaction);
+        WalletModel::SendCoinsReturn sendStatus = model->sendCoins(*transaction);
         // process sendStatus and on error generate message shown to user
         processSendCoinsReturn(sendStatus);
 
         if (sendStatus.status == WalletModel::OK) {
-            Q_EMIT coinsSent(m_current_transaction->getWtx()->GetHash());
+            Q_EMIT coinsSent(transaction->getWtx()->GetHash());
         } else {
             send_failure = true;
         }
@@ -458,13 +458,10 @@ void SendCoinsDialog::on_sendButton_clicked()
         coinControlUpdateLabels();
     }
     fNewRecipientAllowed = true;
-    m_current_transaction.reset();
 }
 
 void SendCoinsDialog::clear()
 {
-    m_current_transaction.reset();
-
     // Clear coin control settings
     CoinControlDialog::coinControl()->UnSelectAll();
     ui->checkBoxCoinControlChange->setChecked(false);
