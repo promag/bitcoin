@@ -150,20 +150,6 @@ std::vector<UniValue> JSONRPCProcessBatchReply(const UniValue& in)
     return batch;
 }
 
-JSONRPCRequest& JSONRPCRequest::operator=(const JSONRPCRequest& other)
-{
-    if (this != &other) {
-        id = other.id;
-        strMethod = other.strMethod;
-        params = other.params;
-        fHelp = other.fHelp;
-        URI = other.URI;
-        authUser = other.authUser;
-        peerAddr = other.peerAddr;
-    }
-    return *this;
-}
-
 void JSONRPCRequest::parse(const UniValue& valRequest)
 {
     // Parse request

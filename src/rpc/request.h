@@ -42,11 +42,18 @@ public:
 
     JSONRPCRequest(const util::Ref& context) : id(NullUniValue), params(NullUniValue), fHelp(false), context(context) {}
 
-    //! Copy request information from another request object that may have a
-    //! different request context. This assigns all members except the context
-    //! member, and the implementation should be updated if any members are
+    //! Initializes request information from another request object and the
+    //! given context. The implementation should be updated if any members are
     //! added or removed above.
-    JSONRPCRequest& operator=(const JSONRPCRequest& other);
+    JSONRPCRequest(const JSONRPCRequest& other, const util::Ref& context)
+        : id(other.id)
+        , strMethod(other.strMethod)
+        , params(other.params)
+        , fHelp(other.fHelp)
+        , URI(other.URI)
+        , authUser(other.authUser)
+        , peerAddr(other.peerAddr)
+        , context(context) {}
 
     void parse(const UniValue& valRequest);
 };
