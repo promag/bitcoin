@@ -320,7 +320,8 @@ void StopHTTPRPC()
     }
 }
 
-const std::set<std::string>& GetWhitelistedRpcs(const std::string& user_name)
+std::set<std::string> GetWhitelistedRpcs(const std::string& user_name)
 {
-    return g_rpc_whitelist.at(user_name);
+    const auto i = g_rpc_whitelist.find(user_name);
+    return i == g_rpc_whitelist.end() ? std::set<std::string>{} : i->second;
 }

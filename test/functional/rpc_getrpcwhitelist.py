@@ -3,7 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """
-Test getrpcwhitelist RPC call.
+Test getrpccredentials RPC call.
 """
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
@@ -40,7 +40,7 @@ class RPCWhitelistTest(BitcoinTestFramework):
         self.settings = ["dummy",
                          "4e799db4b65924f4468b1c9ff3a68109$5fcd282dcaf4ae74599934a543626c0a11e7e83ead30f07b182058ead8e85da9",
                          "dummypwd",
-                         "getbalance,getrpcwhitelist,getwalletinfo"]
+                         "getbalance,getrpccredentials,getwalletinfo"]
         self.settings_forbidden = ["dummy2",
                         "f3d319f64b076012f75626c9d895fced$7f55381a24fda02c5de7c18fc377f56fc573149b4d6f83daa9fd584210b51f99",
                         "dummy2pwd",
@@ -55,15 +55,15 @@ class RPCWhitelistTest(BitcoinTestFramework):
             f.write("rpcwhitelist={}:{}\n".format(self.settings_forbidden[0], self.settings_forbidden[3]))
 
     def run_test(self):
-        self.log.info("Test getrpcwhitelist")
-        whitelisted = {method: None for method in self.settings[3].split(',')}
+        self.log.info("Test getrpccredentials")
+        whitelisted = self.settings[3].split(',')
 
         # should return allowed rpcs
-        result = call_rpc(self.nodes[0], self.settings, 'getrpcwhitelist')
+        result = call_rpc(self.nodes[0], self.settings, 'getrpccredentials')
         assert_equal(200, result['status'])
-        assert_equal(result['json']['methods'], whitelisted)
+        assert_equal(result['json']['whitelist'], whitelisted)
         # should fail because user has no rpcwhitelist-rpc entry in bitcoin.conf
-        result = call_rpc(self.nodes[0], self.settings_forbidden, 'getrpcwhitelist')
+        result = call_rpc(self.nodes[0], self.settings_forbidden, 'getrpccredentials')
         assert_equal(result['status'], 403)
 
 if __name__ == "__main__":

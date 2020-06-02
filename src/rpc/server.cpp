@@ -241,34 +241,34 @@ static UniValue getrpcinfo(const JSONRPCRequest& request)
     return result;
 }
 
-static UniValue getrpcwhitelist(const JSONRPCRequest& request)
+static UniValue getrpccredentials(const JSONRPCRequest& request)
 {
-    RPCHelpMan{"getrpcwhitelist",
-                "\nReturns whitelisted RPCs for the current user.\n",
+    RPCHelpMan{"getrpccredentials",
+                "\nReturns RPC credentials for the current user.\n",
                 {},
                 RPCResult{
                     RPCResult::Type::OBJ, "", "",
                     {
-                        {RPCResult::Type::ARR, "methods", "List of RPCs that the user is allowed to call",
+                        {RPCResult::Type::ARR, "whitelist", "List of RPCs that the user is allowed to call",
                         {
                             {RPCResult::Type::STR, "rpc", "rpc command"},
                         }},
                     }
                 },
                 RPCExamples{
-                    HelpExampleCli("getrpcwhitelist", "")
-                + HelpExampleRpc("getrpcwhitelist", "")},
+                    HelpExampleCli("getrpccredentials", "")
+                + HelpExampleRpc("getrpccredentials", "")},
             }.Check(request);
 
-    UniValue whitelisted_rpcs(UniValue::VOBJ);
-    const std::set<std::string>& whitelist = GetWhitelistedRpcs(request.authUser);
-    for (const auto& rpc : whitelist) {
-        whitelisted_rpcs.pushKV(rpc, NullUniValue);
-    }
-
     UniValue result(UniValue::VOBJ);
-    result.pushKV("methods", whitelisted_rpcs);
-
+    const std::set<std::string>& whitelist = GetWhitelistedRpcs(request.authUser);
+    if (!whitelist.empty()) {
+        UniValue whitelisted_rpcs(UniValue::VARR);
+        for (const auto& rpc : whitelist) {
+            whitelisted_rpcs.push_back(rpc);
+        }
+        result.pushKV("whitelist", whitelisted_rpcs);
+    }
     return result;
 }
 
@@ -278,7 +278,7 @@ static const CRPCCommand vRPCCommands[] =
   //  --------------------- ------------------------  -----------------------  ----------
     /* Overall control/query calls */
     { "control",            "getrpcinfo",             &getrpcinfo,             {}  },
-    { "control",            "getrpcwhitelist",        &getrpcwhitelist,        {}  },
+    { "control",            "getrpccredentials",        &getrpccredentials,        {}  },
     { "control",            "help",                   &help,                   {"command"}  },
     { "control",            "stop",                   &stop,                   {"wait"}  },
     { "control",            "uptime",                 &uptime,                 {}  },
