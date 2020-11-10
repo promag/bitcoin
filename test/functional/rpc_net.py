@@ -77,7 +77,6 @@ class NetTest(BitcoinTestFramework):
         if self.is_wallet_compiled():
             self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 1)
         self.nodes[1].generate(1)
-        self.sync_all()
         time_now = int(time.time())
         peer_info = [x.getpeerinfo() for x in self.nodes]
         # Verify last_block and last_transaction keys/values.

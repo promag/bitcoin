@@ -63,7 +63,6 @@ class GetBlockTemplateLPTest(BitcoinTestFramework):
 
         # Add enough mature utxos to the wallets, so that all txs spend confirmed coins
         self.nodes[0].generate(100)
-        self.sync_blocks()
 
         self.log.info("Test that introducing a new transaction into the mempool will terminate the longpoll")
         thr = LongpollThread(self.nodes[0])
