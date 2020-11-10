@@ -456,6 +456,7 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
         assert_equal(len(binary_cli), num_nodes)
         for i in range(num_nodes):
             test_node_i = TestNode(
+                self,
                 i,
                 get_datadir_path(self.options.tmpdir, i),
                 chain=self.chain,
@@ -693,22 +694,22 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
             self.log.debug("Creating cache directory {}".format(cache_node_dir))
 
             initialize_datadir(self.options.cachedir, CACHE_NODE_ID, self.chain)
-            self.nodes.append(
-                TestNode(
-                    CACHE_NODE_ID,
-                    cache_node_dir,
-                    chain=self.chain,
-                    extra_conf=["bind=127.0.0.1"],
-                    extra_args=['-disablewallet'],
-                    rpchost=None,
-                    timewait=self.rpc_timeout,
-                    timeout_factor=self.options.timeout_factor,
-                    bitcoind=self.options.bitcoind,
-                    bitcoin_cli=self.options.bitcoincli,
-                    coverage_dir=None,
-                    cwd=self.options.tmpdir,
-                    descriptors=self.options.descriptors,
-                ))
+            self.nodes.append(TestNode(
+                self,
+                CACHE_NODE_ID,
+                cache_node_dir,
+                chain=self.chain,
+                extra_conf=["bind=127.0.0.1"],
+                extra_args=['-disablewallet'],
+                rpchost=None,
+                timewait=self.rpc_timeout,
+                timeout_factor=self.options.timeout_factor,
+                bitcoind=self.options.bitcoind,
+                bitcoin_cli=self.options.bitcoincli,
+                coverage_dir=None,
+                cwd=self.options.tmpdir,
+                descriptors=self.options.descriptors,
+            ))
             self.start_node(CACHE_NODE_ID)
             cache_node = self.nodes[CACHE_NODE_ID]
 

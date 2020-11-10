@@ -62,14 +62,14 @@ class TestNode():
 
     To make things easier for the test writer, any unrecognised messages will
     be dispatched to the RPC connection."""
-
-    def __init__(self, i, datadir, *, chain, rpchost, timewait, timeout_factor, bitcoind, bitcoin_cli, coverage_dir, cwd, extra_conf=None, extra_args=None, use_cli=False, start_perf=False, use_valgrind=False, version=None, descriptors=False):
+    def __init__(self, framework, i, datadir, *, chain, rpchost, timewait, timeout_factor, bitcoind, bitcoin_cli, coverage_dir, cwd, extra_conf=None, extra_args=None, use_cli=False, start_perf=False, use_valgrind=False, version=None, descriptors=False):
         """
         Kwargs:
             start_perf (bool): If True, begin profiling the node with `perf` as soon as
                 the node starts.
         """
 
+        self.framework = framework
         self.index = i
         self.datadir = datadir
         self.bitcoinconf = os.path.join(self.datadir, "bitcoin.conf")
