@@ -77,9 +77,8 @@ class MempoolCoinbaseTest(BitcoinTestFramework):
         # Broadcast and mine 103_1:
         spend_103_1_id = self.nodes[0].sendrawtransaction(spend_103_1_raw)
         last_block = self.nodes[0].generate(1)
-        # Sync blocks, so that peer 1 gets the block before timelock_tx
+        # generate() implicitly syncs blocks, so that peer 1 gets the block before timelock_tx
         # Otherwise, peer 1 would put the timelock_tx in recentRejects
-        self.sync_all()
 
         # Time-locked transaction can now be spent
         timelock_tx_id = self.nodes[0].sendrawtransaction(timelock_tx)
