@@ -62,14 +62,13 @@ class TestNode():
 
     To make things easier for the test writer, any unrecognised messages will
     be dispatched to the RPC connection."""
-    def __init__(self, framework, i, datadir, *, chain, rpchost, timewait, timeout_factor, bitcoind, bitcoin_cli, coverage_dir, cwd, extra_conf=None, extra_args=None, use_cli=False, start_perf=False, use_valgrind=False, version=None, descriptors=False):
+    def __init__(self, i, datadir, *, chain, rpchost, timewait, timeout_factor, bitcoind, bitcoin_cli, coverage_dir, cwd, extra_conf=None, extra_args=None, use_cli=False, start_perf=False, use_valgrind=False, version=None, descriptors=False, sync_all=None):
         """
         Kwargs:
             start_perf (bool): If True, begin profiling the node with `perf` as soon as
                 the node starts.
         """
 
-        self.framework = framework
         self.index = i
         self.datadir = datadir
         self.bitcoinconf = os.path.join(self.datadir, "bitcoin.conf")
@@ -89,6 +88,7 @@ class TestNode():
         # Note that common args are set in the config file (see initialize_datadir)
         self.extra_args = extra_args
         self.version = version
+        self.sync_all = sync_all
         # Configuration for logging is set as command-line args rather than in the bitcoin.conf file.
         # This means that starting a bitcoind using the temp dir to debug a failed test won't
         # spam debug.log.
@@ -181,6 +181,12 @@ class TestNode():
         else:
             assert self.rpc_connected and self.rpc is not None, self._node_msg("Error: no RPC connection")
             return getattr(RPCOverloadWrapper(self.rpc, descriptors=self.descriptors), name)
+
+    def _rpc_dispatch_and_sync(self, name, sync_fun, *args, **kwargs):
+        ret = self._rpc_dispatch(name)(*args, **kwargs)
+        if sync_fun:
+            self.sync_all() if sync_fun == True else sync_fun()
+        return ret
 
     def start(self, extra_args=None, *, cwd=None, stdout=None, stderr=None, **kwargs):
         """Start the node."""
@@ -297,22 +303,13 @@ class TestNode():
         self._raise_assertion_error("Unable to retrieve cookie credentials after {}s".format(self.rpc_timeout))
 
     def generateblock(self, *args, sync_fun=True, **kwargs):
-        ret = self._rpc_dispatch('generateblock')(*args, **kwargs)
-        if sync_fun:
-            self.framework.sync_all() if sync_fun == True else sync_fun()
-        return ret
+        return self._rpc_dispatch_and_sync('generateblock', sync_fun, *args, **kwargs)
 
     def generatetodescriptor(self, *args, sync_fun=True, **kwargs):
-        ret = self._rpc_dispatch('generatetodescriptor')(*args, **kwargs)
-        if sync_fun:
-            self.framework.sync_all() if sync_fun == True else sync_fun()
-        return ret
+        return self._rpc_dispatch_and_sync('generatetodescriptor', sync_fun, *args, **kwargs)
 
     def generatetoaddress(self, *args, sync_fun=True, **kwargs):
-        ret = self._rpc_dispatch('generatetoaddress')(*args, **kwargs)
-        if sync_fun:
-            self.framework.sync_all() if sync_fun == True else sync_fun()
-        return ret
+        return self._rpc_dispatch_and_sync('generatetoaddress', sync_fun, *args, **kwargs)
 
     def generate(self, nblocks, **kwargs):
         self.log.debug("TestNode.generate() dispatches `generate` call to `generatetoaddress`")
