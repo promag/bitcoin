@@ -983,9 +983,9 @@ static RPCHelpMan addmultisigaddress()
     if (!wallet) return NullUniValue;
     CWallet* const pwallet = wallet.get();
 
+    LOCK(pwallet->cs_wallet);
     LegacyScriptPubKeyMan& spk_man = EnsureLegacyScriptPubKeyMan(*pwallet);
-
-    LOCK2(pwallet->cs_wallet, spk_man.cs_KeyStore);
+    LOCK(spk_man.cs_KeyStore);
 
     std::string label;
     if (!request.params[2].isNull())
@@ -4230,7 +4230,9 @@ static RPCHelpMan sethdseed()
         throw JSONRPCError(RPC_WALLET_ERROR, "Cannot set a HD seed to a wallet with private keys disabled");
     }
 
-    LOCK2(pwallet->cs_wallet, spk_man.cs_KeyStore);
+    LOCK(pwallet->cs_wallet);
+    LegacyScriptPubKeyMan& spk_man = EnsureLegacyScriptPubKeyMan(*pwallet);
+    LOCK(spk_man.cs_KeyStore);
 
     // Do not do anything to non-HD wallets
     if (!pwallet->CanSupportFeature(FEATURE_HD)) {
