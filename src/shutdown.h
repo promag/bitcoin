@@ -14,8 +14,8 @@ bool InitShutdownState();
 /** Request shutdown of the application. */
 void StartShutdown();
 
-/** Clear shutdown flag. This can be racy, so use this only in exceptional cases or for
- * testing.
+/** Clear shutdown flag. Only use this during init (before calling WaitForShutdown in any
+ * thread), or in the unit tests. Calling it in other circumstances will cause a race condition.
  */
 void AbortShutdown();
 
