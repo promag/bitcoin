@@ -5,13 +5,16 @@
 
 #include <shutdown.h>
 
+#include <config/bitcoin-config.h>
+
 #include <assert.h>
 #include <atomic>
 #ifdef WIN32
 #include <condition_variable>
 #else
-#include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
 #endif
 
 static std::atomic<bool> fRequestShutdown(false);
@@ -29,9 +32,17 @@ static int g_shutdown_pipe[2];
 bool InitShutdownState()
 {
 #ifndef WIN32
+#if HAVE_O_CLOEXEC
+    // If we can, make sure that the file descriptors are closed on fork()
+    // to avoid interference.
+    if (pipe2(g_shutdown_pipe, O_CLOEXEC) != 0) {
+        return false;
+    }
+#else
     if (pipe(g_shutdown_pipe) != 0) {
         return false;
     }
+#endif
 #endif
     return true;
 }
