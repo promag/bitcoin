@@ -58,18 +58,9 @@ void StartShutdown()
     // Make sure that the token is only written once even if multiple threads call this concurrently or in
     // case of a reentrant signal.
     if (!fRequestShutdown.exchange(true)) {
-        // Write an arbitrary byte to the write end of the shutdown pipe.
-        const char token = 'x';
-        while (true) {
-            int result = write(g_shutdown_pipe[1], &token, 1);
-            if (result < 0) {
-                // Failure. It's possible that the write was interrupted by another signal.
-                // Other errors are unexpected here.
-                assert(errno == EINTR);
-            } else {
-                assert(result == 1);
-                break;
-            }
+        int result = close(g_shutdown_pipe[0]);
+        if (result < 0) {
+            assert(errno == EBADF);
         }
     }
 #endif
@@ -96,17 +87,10 @@ void WaitForShutdown()
     std::unique_lock<std::mutex> lk(g_shutdown_mutex);
     g_shutdown_cv.wait(lk, [] { return fRequestShutdown.load(); });
 #else
-    char token;
-    while (true) {
-        int result = read(g_shutdown_pipe[0], &token, 1);
-        if (result < 0) {
-            // Failure. Check if the read was interrupted by a signal.
-            // Other errors are unexpected here.
-            assert(errno == EINTR);
-        } else {
-            assert(result == 1);
-            break;
-        }
+    char dummy;
+    int result = read(g_shutdown_pipe[0], &dummy, 1);
+    if (result < 0) {
+        assert(errno == EINTR);
     }
 #endif
 }
