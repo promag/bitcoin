@@ -33,8 +33,8 @@ bool InitShutdownState()
 {
 #ifndef WIN32
 #if HAVE_O_CLOEXEC
-    // If we can, make sure that the file descriptors are closed on fork()
-    // to avoid interference.
+    // If we can, make sure that the file descriptors are closed on exec()
+    // to prevent interference.
     if (pipe2(g_shutdown_pipe, O_CLOEXEC) != 0) {
         return false;
     }
