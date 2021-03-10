@@ -1196,6 +1196,7 @@ void CWallet::transactionRemovedFromMempool(const CTransactionRef& tx, MemPoolRe
     LOCK(cs_wallet);
     auto it = mapWallet.find(tx->GetHash());
     if (it != mapWallet.end()) {
+        if (!it->second.fInMempool) return;
         it->second.fInMempool = false;
     }
     // Handle transactions that were removed from the mempool because they
