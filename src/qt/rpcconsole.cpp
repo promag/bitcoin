@@ -883,7 +883,7 @@ void RPCConsole::on_lineEdit_returnPressed()
 {
     QString cmd = ui->lineEdit->text();
 
-    if (cmd.isEmpty()) {
+    if (cmd.isEmpty() || m_is_executing) {
         return;
     }
 
@@ -916,6 +916,7 @@ void RPCConsole::on_lineEdit_returnPressed()
 
     message(CMD_REQUEST, QString::fromStdString(strFilteredCmd));
     message(CMD_REPLY, tr("Executing…"));
+    m_is_executing = true;
     Q_EMIT cmdRequest(cmd, m_last_wallet_model);
 
     cmd = QString::fromStdString(strFilteredCmd);
@@ -965,6 +966,7 @@ void RPCConsole::startExecutor()
     connect(executor, &RPCExecutor::reply, this, [this](int category, const QString& command) {
         ui->messagesWidget->undo();
         message(category, command);
+        m_is_executing = false;
     });
 
     // Requests from this object must go to executor
