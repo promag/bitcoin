@@ -311,14 +311,14 @@ bool GetScriptOp(CScriptBase::const_iterator& pc, CScriptBase::const_iterator en
         {
             if (end - pc < 2)
                 return false;
-            nSize = ReadLE16(&pc[0]);
+            nSize = ReadLE16(pc.data());
             pc += 2;
         }
         else if (opcode == OP_PUSHDATA4)
         {
             if (end - pc < 4)
                 return false;
-            nSize = ReadLE32(&pc[0]);
+            nSize = ReadLE32(pc.data());
             pc += 4;
         }
         if (end - pc < 0 || (unsigned int)(end - pc) < nSize)

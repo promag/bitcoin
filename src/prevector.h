@@ -105,6 +105,7 @@ public:
         typedef std::random_access_iterator_tag iterator_category;
         const_iterator(const T* ptr_) : ptr(ptr_) {}
         const_iterator(iterator x) : ptr(&(*x)) {}
+        const T* data() const { return ptr; }
         const T& operator*() const { return *ptr; }
         const T* operator->() const { return ptr; }
         const T& operator[](size_type pos) const { return ptr[pos]; }

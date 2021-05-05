@@ -57,22 +57,22 @@ public:
 
     unsigned char* begin()
     {
-        return &m_data[0];
+        return std::begin(m_data);
     }
 
     unsigned char* end()
     {
-        return &m_data[WIDTH];
+        return std::end(m_data);
     }
 
     const unsigned char* begin() const
     {
-        return &m_data[0];
+        return std::begin(m_data);
     }
 
     const unsigned char* end() const
     {
-        return &m_data[WIDTH];
+        return std::end(m_data);
     }
 
     unsigned int size() const
@@ -102,7 +102,7 @@ public:
     template<typename Stream>
     void Unserialize(Stream& s)
     {
-        s.read((char*)m_data, sizeof(m_data));
+        s.read(reinterpret_cast<char*>(begin()), size());
     }
 };
 
